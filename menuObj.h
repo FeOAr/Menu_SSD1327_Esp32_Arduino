@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 13:44:42
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-26 22:14:51
+ * @LastEditTime: 2023-06-29 21:45:22
  * @FilePath: /Menu_SSD1327_S3/menu_obj.h
  * @Description:
  */
@@ -30,16 +30,16 @@ class baseItem
 public:
     int x;
     int y;
-    String itemText;
-    String itemKey;
+    string itemText;
+    string itemKey;
     bool hide;
     int level;
     int type;
 
 public:
     baseItem();
-    virtual String getCommit(){};
-    virtual String getFather(){};
+    virtual string getCommit(){};
+    virtual string getFather(){};
     virtual bool getSonFlg(){};
     virtual void setSonFlg(){};
 };
@@ -48,14 +48,14 @@ public:
 class listItem : public baseItem
 {
 public:
-    String commit;
-    String father; // 指向父条目,直接使用 itemKey
+    string commit;
+    string father; // 指向父条目,直接使用 itemKey
     bool haveSon;  // 是否有子菜单
 
 public:
-    listItem(int, String, String, bool, int, int, String, String);
-    String getCommit() { return commit; };
-    String getFather() { return father; };
+    listItem(int, string, string, bool, int, int, string, string);
+    string getCommit() { return commit; };
+    string getFather() { return father; };
     bool getSonFlg() { return haveSon; };
     void setSonFlg() { haveSon = true; };
 };
@@ -63,7 +63,7 @@ public:
 class labelItem : public baseItem
 {
 public:
-    labelItem(int, int, String, String, bool, int, int);
+    labelItem(int, int, string, string, bool, int, int);
 };
 
 /*-------------Main function-------------*/
@@ -71,7 +71,7 @@ class mainFun
 {
 public: // 应该私有
     // 该表存了所有的标签，所以无法排序，导致有一些操作较繁琐
-    std::map<String, baseItem *> regTable; // 考虑使用 shared_ptr,
+    std::map<string, baseItem *> regTable; // 考虑使用 shared_ptr,
     int SelectBoxYcode = SeleceBoxStart;   // 选择框的y坐标
     int regTableYCodeMax;
     int regTableYCodeMin;
@@ -82,12 +82,12 @@ public: // 应该私有
     static bool strScrollDir; // 字符串滚动方向
     static int strScrollMaskLength; // 字符串滚动遮罩长度
     bool startScroll = false;
-    static String currentKeyLebel;  //显示所有条目依赖的索引
-    static String absolutePath;  //所有操作依赖的完整路径
+    static string currentKeyLebel;  //显示所有条目依赖的索引
+    static string absolutePath;  //所有操作依赖的完整路径
 
 public:
     void registerItem(baseItem *);
-    void unregisterItem(String);
+    void unregisterItem(string);
     void updateYCodeRange();
     void updateCoordinate(bool);
     void updateArrow(bool);
@@ -97,9 +97,10 @@ public:
     void displayMainItem();
     void displaySubItem();
     void showAllRegTable();
-    String cutStr(String, int);
-    void scrollStr(String, int);
+    string cutStr(string, int);
+    void scrollStr(string, int);
     void resetStrOffset();
+    void resetDispPrameter();
 
     void confirmItem();
 

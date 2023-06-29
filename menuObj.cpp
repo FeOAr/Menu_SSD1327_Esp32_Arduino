@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 16:11:57
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-26 22:12:57
+ * @LastEditTime: 2023-06-29 21:47:15
  * @FilePath: /Menu_SSD1327_S3/menu_obj.cpp
  * @Description:
  */
@@ -30,8 +30,8 @@ bool endAlert = false;
 int mainFun::strOffset = 0;
 bool mainFun::strScrollDir = clockwise;
 int mainFun::strScrollMaskLength = 0;
-String mainFun::currentKeyLebel = "root";
-String mainFun::absolutePath = "root";
+string mainFun::currentKeyLebel = "root";
+string mainFun::absolutePath = "root";
 
 baseItem::baseItem()
 {
@@ -48,16 +48,16 @@ baseItem::baseItem()
  * @description: 列表项，动态位置
  * @param {int} x
  * @param {int} y
- * @param {String} key
- * @param {String} text
+ * @param {string} key
+ * @param {string} text
  * @param {bool} hide
  * @param {int} level
  * @param {int} type
- * @param {String} commit
- * @param {String} father
+ * @param {string} commit
+ * @param {string} father
  * @return {*}
  */
-listItem::listItem(int sortId, String key, String text, bool hide, int level, int type, String commit, String father)
+listItem::listItem(int sortId, string key, string text, bool hide, int level, int type, string commit, string father)
 {
     this->x = START_POS_X + itemOffsetPosX + 10;
     this->y = START_POS_Y + itemOffsetPOSY + (sortId + 1) * 14;
@@ -75,14 +75,14 @@ listItem::listItem(int sortId, String key, String text, bool hide, int level, in
  * @description: 静态标签，位置固定
  * @param {int} x
  * @param {int} y
- * @param {String} key
- * @param {String} text
+ * @param {string} key
+ * @param {string} text
  * @param {bool} hide
  * @param {int} level
  * @param {int} type
  * @return {*}
  */
-labelItem::labelItem(int x, int y, String key, String text, bool hide, int level, int type)
+labelItem::labelItem(int x, int y, string key, string text, bool hide, int level, int type)
 {
     this->x = x;
     this->y = y;
@@ -95,10 +95,10 @@ labelItem::labelItem(int x, int y, String key, String text, bool hide, int level
 
 void mainFun::registerItem(baseItem *ptr)
 {
-    regTable.insert(pair<String, baseItem *>(ptr->itemKey, ptr));
+    regTable.insert(pair<string, baseItem *>(ptr->itemKey, ptr));
 }
 
-void mainFun::unregisterItem(String itemKey)
+void mainFun::unregisterItem(string itemKey)
 {
     regTable.erase(itemKey);
 }
@@ -107,22 +107,26 @@ void mainFun::updateYCodeRange()
 {
     regTableYCodeMax = 0;
     regTableYCodeMin = 100;
-    std::map<String, baseItem *>::iterator it;
+    std::map<string, baseItem *>::iterator it;
     for (it = regTable.begin(); it != regTable.end(); it++)
     {
         // 只处理main list，其他不动
-        if ((it->second->level == currentLevel) && (it->second->type == list))
+        if (it->second->type == list)
         {
-            if (regTableYCodeMax < it->second->y)
+            if (it->second->getFather() == this->currentKeyLebel)
             {
-                regTableYCodeMax = it->second->y;
-            }
-            if (regTableYCodeMin > it->second->y)
-            {
-                regTableYCodeMin = it->second->y;
+                if (regTableYCodeMax < it->second->y)
+                {
+                    regTableYCodeMax = it->second->y;
+                }
+                if (regTableYCodeMin > it->second->y)
+                {
+                    regTableYCodeMin = it->second->y;
+                }
             }
         }
     }
+    Serial.printf("regTableYCodeMax = %d,regTableYCodeMin= %d\n", regTableYCodeMax, regTableYCodeMin);
 }
 
 void mainFun::updateCoordinate(bool direction)
@@ -141,7 +145,7 @@ void mainFun::updateCoordinate(bool direction)
     }
 
     /*----------刷新------------*/
-    std::map<String, baseItem *>::iterator it;
+    std::map<string, baseItem *>::iterator it;
 
     if (direction == 0) // 列表下移，选项向条上走
     {
@@ -227,6 +231,7 @@ void mainFun::updateArrow(bool direction)
  */
 void mainFun::updateSelectionBox(bool direction)
 {
+    Serial.printf("direction =%d\n", direction);
     if (!direction) // up, 0
     {
         // 尺寸间距以及步进，暂时没有修改的必要，直接写死
@@ -254,6 +259,7 @@ void mainFun::updateSelectionBox(bool direction)
             this->updateCoordinate(direction);
         }
     }
+    Serial.printf("SelectBoxYcode =%d\n", regTableYCodeMax);
     baseItem *temp = getCurrentSelect();
     if (temp != nullptr)
     {
@@ -269,55 +275,91 @@ void mainFun::listSlider()
 {
     int itemSum = 0;
     int rate = 0;
-    std::map<String, baseItem *>::iterator it;
+    std::map<string, baseItem *>::iterator it;
     for (it = regTable.begin(); it != regTable.end(); it++)
     {
-        if ((it->second->type == list) && (it->second->level == currentLevel))
+        if (it->second->type == list)
         {
-            itemSum++;
+            if (it->second->getFather() == this->currentKeyLebel)
+            {
+                itemSum++;
+            }
         }
     }
     itemSliderZoomRatio = (114 / itemSum);
 }
 
 /**
- * @description: 返回当前光标所在的选项
+ * @description: 返回当前光标所在的选项                                 打印子菜单故障，疑似现处理再查找
  * @return {*}
  */
 baseItem *mainFun::getCurrentSelect()
 {
-    std::map<String, baseItem *>::iterator it;
+    std::map<string, baseItem *>::iterator it;
     for (it = regTable.begin(); it != regTable.end(); it++)
     {
         // 只处理main list，其他不动
-        if ((it->second->level == currentLevel) &&
-            (it->second->type == list) &&
-            (SelectBoxYcode + (28 - SeleceBoxStart + 1) > it->second->y) &&
-            (SelectBoxYcode + (28 - SeleceBoxStart - 1) < it->second->y)) // 让box的y坐标夹逼，判断选的谁
+        if (it->second->type == list)
         {
-            return it->second;
+            if (it->second->getFather() == this->currentKeyLebel)
+            {
+                if ((SelectBoxYcode + (28 - SeleceBoxStart + 1) > it->second->y) &&
+                    (SelectBoxYcode + (28 - SeleceBoxStart - 1) < it->second->y)) // 让box的y坐标夹逼，判断选的谁
+                {
+                    // Serial.printf("{Check point}\n");
+                    // Serial.printf("It get a obj = %s\n", it->second->itemKey.c_str());
+                    return it->second;
+                }
+#if 0
+                Serial.println("-----------------------------");
+                Serial.printf("x = %d, y = %d\n", it->second->x, it->second->y);
+                Serial.println(it->second->itemKey.c_str());
+                Serial.println(it->second->itemText.c_str());
+#endif
+            }
         }
     }
     return nullptr;
 }
 
+/**
+ * @description: 确认与返回逻辑
+ * @return {*}
+ */
 void mainFun::confirmItem()
 {
     baseItem *temp = getCurrentSelect();
     int subStrStartPos = 0;
     if (temp != nullptr)
     {
-        if (temp->itemKey == "..")
+        if (!temp->getSonFlg() && temp->itemText != "..")
         {
-            // subStrStartPos = this->absolutePath.
-            this->absolutePath = "/" + temp->itemKey;
-            this->currentKeyLebel = temp->itemKey;
+            Serial.printf("Have no son\n");
+            return;
+        }
+
+        if (temp->itemText == "..")
+        {
+            subStrStartPos = this->absolutePath.find_last_of("/");
+            if (subStrStartPos > 0)
+            {
+                this->currentKeyLebel = this->absolutePath.substr(subStrStartPos + 1,
+                                                                  this->absolutePath.length() - (subStrStartPos + 1));
+                this->absolutePath = this->absolutePath.erase(subStrStartPos + 1,
+                                                              this->absolutePath.length() - (subStrStartPos + 1));
+            }
         }
         else
         {
-            this->absolutePath = "/" + temp->itemKey;
+            this->absolutePath += "/" + temp->itemKey;
             this->currentKeyLebel = temp->itemKey;
         }
+        Serial.printf("Current = %s\nAbsolute=%s\n", this->currentKeyLebel.c_str(), this->absolutePath.c_str());
+        resetDispPrameter();
+    }
+    else
+    {
+        Serial.printf("It's NULLPTR [confirmItem]\n");
     }
 }
 
@@ -326,9 +368,9 @@ void mainFun::confirmItem()
  * @return {*}
  */
 #if 1
-String mainFun::cutStr(String input, int maxStrDispLength)
+string mainFun::cutStr(string input, int maxStrDispLength)
 {
-    String temp = input.substring(0, this->strScrollMaskLength + maxStrDispLength + 1);
+    string temp = input.substr(0, this->strScrollMaskLength + maxStrDispLength + 1);
     if (this->strOffset % 5 == 0)
     {
         if (this->strScrollDir == clockwise)
@@ -349,11 +391,11 @@ String mainFun::cutStr(String input, int maxStrDispLength)
 
 /**
  * @description: 这里offset两端的值会多循环一次，本是bug，但是恰好实现了字符串换向前的停顿效果
- * @param {String} input
+ * @param {string} input
  * @param {int} maxStrDispLength
  * @return {*}
  */
-void mainFun::scrollStr(String input, int maxStrDispLength)
+void mainFun::scrollStr(string input, int maxStrDispLength)
 {
     int strLengthPix = u8g2.getStrWidth(input.c_str()) + 10; // 12是字符像素宽度
     int maxOffset = strLengthPix - maxStrDispLength * 5;
@@ -392,6 +434,18 @@ void mainFun::resetStrOffset()
 }
 
 /**
+ * @description: 为新页面重置一些参数
+ * @return {*}
+ */
+void mainFun::resetDispPrameter()
+{
+    updateYCodeRange();
+    listSlider();
+    SelectBoxYcode = SeleceBoxStart;
+    timerReset();
+}
+
+/**
  * @description: 主列表绘制
  * @todo:参考子列表绘制函数，本地更新y坐标，去掉构造函数里的sortId
  * @return {*}
@@ -400,51 +454,76 @@ void mainFun::displayMainItem()
 {
     int maxStrDispLength = 12;
     int finalX = 0;
-    std::map<String, baseItem *>::iterator it;
+    string test = "test";
+    string finalOutString = "NULL";
+    std::map<string, baseItem *>::iterator it;
+
+    baseItem *currentSelect = this->getCurrentSelect();
+    if (currentSelect == nullptr)
+    {
+        Serial.println("[return]");
+        return;
+    }
+    // Serial.println("[not return]");
+
     for (it = regTable.begin(); it != regTable.end(); it++)
     {
-        if ((!it->second->hide) && (it->second->level == currentLevel))
+        if (it->second->hide == false)
         {
-            // 处理超长字符串
-            String temp;
-            if (it->second->itemText.length() > maxStrDispLength)
+            if (it->second->type == list)
             {
-                if (it->first == this->getCurrentSelect()->itemKey && this->startScroll)
+                if (it->second->getFather().c_str() == this->currentKeyLebel)
                 {
-                    // 超长选中
-                    temp = cutStr(it->second->itemText, maxStrDispLength);
-                    scrollStr(it->second->itemText, maxStrDispLength);
-                    finalX = 10 - this->strOffset;
-                    u8g2.setCursor(finalX, it->second->y);
-                }
-                else
-                {
-                    // 超长非选中
-                    temp = it->second->itemText.substring(0, maxStrDispLength);
-                    temp += "...";
-                    u8g2.setCursor(it->second->x, it->second->y);
-                }
-            }
-            else
-            {
-                temp = it->second->itemText; // 正常字符串
-                u8g2.setCursor(it->second->x, it->second->y);
-            }
+                    // 处理超长字符串
+                    if (it->second->itemText.length() > maxStrDispLength)
+                    {
+                        if (it->first == currentSelect->itemKey && this->startScroll)
+                        {
+                            // 超长选中
+                            // Serial.println("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
+                            finalOutString = cutStr(it->second->itemText, maxStrDispLength);
+                            // Serial.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+                            scrollStr(it->second->itemText, maxStrDispLength);
+                            finalX = 10 - this->strOffset;
+                            u8g2.setCursor(finalX, it->second->y);
+                        }
+                        else
+                        {
+                            // 超长非选中
+                            finalOutString = it->second->itemText.substr(0, maxStrDispLength);
+                            finalOutString += "...";
+                            u8g2.setCursor(it->second->x, it->second->y);
+                        }
+                    }
+                    else
+                    {
+                        finalOutString = it->second->itemText; // 正常字符串
+                        u8g2.setCursor(it->second->x, it->second->y);
+                    }
 
-            u8g2.print(temp);
+                    u8g2.print(finalOutString.c_str());
 
-            /*----------- 处理有子菜单的项目 -------------*/
-            if (it->second->type == list && it->second->getSonFlg())
-            {
-                u8g2.drawStr(it->second->x + 64, it->second->y, ">");
-            }
+                    /*----------- 处理有子菜单的项目 -------------*/
+                    if (it->second->type == list && it->second->getSonFlg())
+                    {
+                        u8g2.drawStr(it->second->x + 64, it->second->y, ">");
+                    }
 #if DEBUG
-            Serial.println("-----------------------------");
-            Serial.printf("x = %d, y = %d\n", it->second->x, it->second->y);
-            Serial.println(it->second->itemKey);
-            Serial.println(it->second->itemText);
-            Serial.println("-----------------------------");
+                    Serial.println("-----------------------------");
+                    Serial.printf("x = %d, y = %d\n", it->second->x, it->second->y);
+                    Serial.println(it->second->itemKey.c_str());
+                    Serial.println(it->second->itemText.c_str());
+                    Serial.println("-----------------------------");
 #endif
+                }
+            }
+
+            if (it->second->type == label)
+            {
+                // Serial.println("here");
+                u8g2.setCursor(it->second->x, it->second->y);
+                u8g2.print(it->second->itemText.c_str());
+            }
         }
     }
 }
@@ -460,35 +539,45 @@ void mainFun::displaySubItem()
     int subMenuY = 28;
     int sum = 0;
     int maxLengthStr = 6;
-    std::map<String, baseItem *>::iterator it;
+    baseItem *currentSelect = getCurrentSelect();
+    if (currentSelect == nullptr)
+    {
+        return;
+    }
+
+    std::map<string, baseItem *>::iterator it;
     for (it = regTable.begin(); it != regTable.end(); it++)
     {
-        if ((!it->second->hide) &&
-            (it->second->level == currentLevel + 1) &&
-            (it->second->getFather() == getCurrentSelect()->itemKey))
+        if (it->second->hide == false)
         {
-            u8g2.setCursor(subMenuX, subMenuY + sum * 14);
+            if (it->second->type == list)
+            {
+                if (it->second->getFather() == currentSelect->itemKey)
+                {
+                    u8g2.setCursor(subMenuX, subMenuY + sum * 14);
 
-            // 超长字符串
-            String temp;
-            if (it->second->itemText.length() > maxLengthStr)
-            {
-                temp = it->second->itemText.substring(0, maxLengthStr);
-                temp += "...";
+                    // 超长字符串
+                    string temp;
+                    if (it->second->itemText.length() > maxLengthStr)
+                    {
+                        temp = it->second->itemText.substr(0, maxLengthStr);
+                        temp += "...";
+                    }
+                    else
+                    {
+                        temp = it->second->itemText;
+                    }
+                    u8g2.print(temp.c_str());
+                    sum++;
+                }
             }
-            else
-            {
-                temp = it->second->itemText;
-            }
-            u8g2.print(temp);
-            sum++;
         }
     }
 }
 
 void mainFun::showAllRegTable()
 {
-    std::map<String, baseItem *>::iterator it;
+    std::map<string, baseItem *>::iterator it;
     for (it = regTable.begin(); it != regTable.end(); it++)
     {
         if (it->second->type == list)

@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 12:18:11
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-24 21:19:09
+ * @LastEditTime: 2023-06-28 22:07:16
  * @FilePath: /Menu_SSD1327_S3/Menu_SSD1327_S3.ino
  * @Description:
  * @todo: 目前滚动条右侧需要处理，完毕后菜单主功能完成60%，下来着重看一下level切换，
@@ -16,6 +16,7 @@
 #include "UIdesign.h"
 #include "displayFun.hpp"
 #include "timer.h"
+// #include "esp_log.h"
 
 #define touchPinA 4
 #define touchPinB 5
@@ -57,10 +58,10 @@ void touchCFunction()
 void setup(void)
 {
   Serial.begin(115200);
-  
+
   timerInit();
 
-  mainObj->resetStrOffset();  //没写构造函数的锅
+  mainObj->resetStrOffset(); // 没写构造函数的锅
 
   listInit();
 
@@ -84,7 +85,7 @@ void loop(void)
       mainObj->setScrollFlg(false);
       mainObj->resetStrOffset();
       mainObj->updateSelectionBox(up);
-      timerReset();  //滚动字符串触发的定时器
+      timerReset(); // 滚动字符串触发的定时器
       touchStatusA = false;
     }
   }
@@ -106,12 +107,12 @@ void loop(void)
     if (touchRead(touchPinC) > touchTreshold)
     {
       Serial.println("powerSave");
-      u8g2.setPowerSave(powerSave);
+      // u8g2.setPowerSave(powerSave);
       powerSave = !powerSave;
+      mainObj->confirmItem();
       touchStatusC = false;
     }
   }
-
   mainDisplayFun();
   // timerFun();  //检查定时器是否正常
   vTaskDelay(100);
