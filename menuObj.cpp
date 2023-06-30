@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 16:11:57
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-30 20:14:40
+ * @LastEditTime: 2023-06-30 21:58:37
  * @FilePath: /Menu_SSD1327_S3/menu_obj.cpp
  * @Description:
  */
@@ -327,6 +327,32 @@ baseItem *mainFun::getCurrentSelect()
 }
 
 /**
+ * @description: 更新左上角时间标签的
+ * @return {*}
+ */
+void mainFun::updateAllLabel()
+{
+    // 顶栏路径
+    int length;
+    std::map<string, baseItem *>::iterator it;
+    it = regTable.find("headLine");
+    if (it != regTable.end())
+    {
+        it->second->itemText = absolutePath;
+        length = u8g2.getStrWidth(it->second->itemText.c_str());
+        if (length > 128)
+        {
+            length = 128 - length;
+            it->second->x = length;
+        }
+        else
+        {
+            it->second->x = 0;
+        }
+    }
+}
+
+/**
  * @description: 确认与返回逻辑
  * @return {*}
  */
@@ -488,6 +514,9 @@ void mainFun::displayMainItem()
         Serial.println("[return]");
         return;
     }
+
+    updateAllLabel();
+
     for (it = regTable.begin(); it != regTable.end(); it++)
     {
         if (it->second->hide == false)
@@ -561,37 +590,73 @@ void mainFun::displaySubItem()
     int subMenuY = 28;
     int sum = 0;
     int maxLengthStr = 6;
+    int commitSubStrX = 0; // 超长串截取起点
+    int commitSubStrY = 0; // 超长串截取起点
+    int commitSbuStrLength = 0;
+    int commitSubStrThreshold = 7; // 超长串截取阈值
     baseItem *currentSelect = getCurrentSelect();
     if (currentSelect == nullptr)
     {
         return;
     }
-
-    std::map<string, baseItem *>::iterator it;
-    for (it = regTable.begin(); it != regTable.end(); it++)
+    if (currentSelect->getSonFlg() == false)
     {
-        if (it->second->hide == false && it->second->itemText != "../")
+        commitSbuStrLength = currentSelect->getCommit().length();
+        if (commitSbuStrLength < commitSubStrThreshold)
         {
-            if (it->second->type == list)
+            u8g2.setCursor(88, 28);
+            u8g2.print(currentSelect->getCommit().c_str());
+        }
+        else
+        {
+            while (1)
             {
-                if (it->second->getFather() == currentSelect->itemKey)
+                u8g2.setCursor(88, commitSubStrY * 14 + 28);
+                u8g2.print(currentSelect->getCommit().substr(commitSubStrX, commitSubStrThreshold).c_str());
+                commitSbuStrLength = currentSelect->getCommit().length() - (commitSubStrX + commitSubStrThreshold);
+                if (commitSbuStrLength < commitSubStrThreshold)
                 {
-                    // u8g2.setCursor(subMenuX, subMenuY + sum * 14);
-                    u8g2.setCursor(subMenuX, it->second->y - 14);
+                    commitSubStrY++;
+                    u8g2.setCursor(88, commitSubStrY * 14 + 28);
+                    u8g2.print(currentSelect->getCommit().c_str());
+                    break;
+                }
+                else
+                {
+                    commitSubStrY++;
+                    commitSubStrX += commitSubStrThreshold;
+                }
+            }
+        }
+    }
+    else
+    {
+        std::map<string, baseItem *>::iterator it;
+        for (it = regTable.begin(); it != regTable.end(); it++)
+        {
+            if (it->second->hide == false && it->second->itemText != "../")
+            {
+                if (it->second->type == list)
+                {
+                    if (it->second->getFather() == currentSelect->itemKey)
+                    {
+                        // u8g2.setCursor(subMenuX, subMenuY + sum * 14);
+                        u8g2.setCursor(subMenuX, it->second->y - 14);
 
-                    // 超长字符串
-                    string temp;
-                    if (it->second->itemText.length() > maxLengthStr)
-                    {
-                        temp = it->second->itemText.substr(0, maxLengthStr);
-                        temp += "...";
+                        // 超长字符串
+                        string temp;
+                        if (it->second->itemText.length() > maxLengthStr)
+                        {
+                            temp = it->second->itemText.substr(0, maxLengthStr);
+                            temp += "...";
+                        }
+                        else
+                        {
+                            temp = it->second->itemText;
+                        }
+                        u8g2.print(temp.c_str());
+                        sum++;
                     }
-                    else
-                    {
-                        temp = it->second->itemText;
-                    }
-                    u8g2.print(temp.c_str());
-                    sum++;
                 }
             }
         }

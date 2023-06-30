@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 13:44:42
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-30 20:17:41
+ * @LastEditTime: 2023-06-30 21:11:46
  * @FilePath: /Menu_SSD1327_S3/menu_obj.h
  * @Description:
  */
@@ -102,7 +102,7 @@ public:
     void scrollStr(string, int);
     void resetStrOffset();
     void resetDispPrameter(bool);
-
+    void updateAllLabel();
     void confirmItem();
 
     void setScrollFlg(bool status) { startScroll = status; }
