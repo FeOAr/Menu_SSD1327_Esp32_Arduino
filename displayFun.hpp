@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-23 17:28:32
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-27 23:07:45
+ * @LastEditTime: 2023-06-30 19:46:45
  * @FilePath: /Menu_SSD1327_S3/displayFun.hpp
  * @Description:
  */
@@ -37,17 +37,17 @@ void mainDisplayFun()
     /*-------限位提示--------*/
     if (endAlert)
     {
-        u8g2.drawBox(3, mainObj->SelectBoxYcode + 5, 4, 4);
+        u8g2.drawBox(3, mainObj->selectBoxYcode + 5, 4, 4);
         endAlert = false;
     }
     // Serial.printf("\n\n[123]\n");
     /*-------选择框提示--------*/
     u8g2.setDrawColor(2);
-    u8g2.drawBox(0, mainObj->SelectBoxYcode, 72, 14); // 主条
+    u8g2.drawBox(0, mainObj->selectBoxYcode, 72, 14); // 主条
 #if 1
     u8g2.setDrawColor(1);
-    u8g2.drawBox(67, mainObj->SelectBoxYcode, 5, 14); // 滚动遮盖
-    u8g2.drawBox(0, mainObj->SelectBoxYcode, 2, 14);  // 滚动遮盖
+    u8g2.drawBox(67, mainObj->selectBoxYcode, 5, 14); // 滚动遮盖
+    u8g2.drawBox(0, mainObj->selectBoxYcode, 2, 14);  // 滚动遮盖
 #endif
     /*-------位置滑条提示--------*/
     mainObj->listSlider();

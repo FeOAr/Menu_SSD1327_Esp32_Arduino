@@ -27,7 +27,6 @@ U8G2_SSD1327_MIDAS_128X128_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/10, /* dc=*/16, /* 
 bool touchStatusA = false;
 bool touchStatusB = false;
 bool touchStatusC = false;
-bool powerSave = false;
 
 touch_value_t touchTreshold = 60000;
 mainFun *mainObj = new mainFun;
@@ -106,9 +105,6 @@ void loop(void)
     delayMicroseconds(20);
     if (touchRead(touchPinC) > touchTreshold)
     {
-      Serial.println("powerSave");
-      // u8g2.setPowerSave(powerSave);
-      powerSave = !powerSave;
       mainObj->confirmItem();
       touchStatusC = false;
     }

@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 23:21:36
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-29 21:50:47
+ * @LastEditTime: 2023-06-30 19:29:56
  * @FilePath: /Menu_SSD1327_S3/UI_design.hpp
  * @Description:
  */
@@ -76,7 +76,7 @@ void listInit()
     mainObj->registerItem(item_L0_13);
 
     /*-------菜单 L1-------*/
-    baseItem *item_L1_0 = new listItem(1, "item_L1_BK", "..", false, 1, list, "NULL", "item_L0_3");
+    baseItem *item_L1_0 = new listItem(1, "item_L1_BK", "../", false, 1, list, "NULL", "item_L0_3");
     mainObj->registerItem(item_L1_0);
 
     baseItem *item_L1_1 = new listItem(2, "item_L1_1", "Sub item_L1_1", false, 1, list, "NULL", "item_L0_3");

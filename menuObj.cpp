@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 16:11:57
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-29 21:47:15
+ * @LastEditTime: 2023-06-30 20:14:40
  * @FilePath: /Menu_SSD1327_S3/menu_obj.cpp
  * @Description:
  */
@@ -32,6 +32,7 @@ bool mainFun::strScrollDir = clockwise;
 int mainFun::strScrollMaskLength = 0;
 string mainFun::currentKeyLebel = "root";
 string mainFun::absolutePath = "root";
+int mainFun::lastSelectBoxYcode[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
 baseItem::baseItem()
 {
@@ -231,13 +232,13 @@ void mainFun::updateArrow(bool direction)
  */
 void mainFun::updateSelectionBox(bool direction)
 {
-    Serial.printf("direction =%d\n", direction);
+    // Serial.printf("direction =%d\n", direction);
     if (!direction) // up, 0
     {
         // 尺寸间距以及步进，暂时没有修改的必要，直接写死
-        if (SelectBoxYcode > SeleceBoxStart)
+        if (selectBoxYcode > seleceBoxStart)
         {
-            SelectBoxYcode -= 14;
+            selectBoxYcode -= 14;
         }
         else
         {
@@ -248,10 +249,10 @@ void mainFun::updateSelectionBox(bool direction)
     if (direction) // down, 1
     {
 
-        if (SelectBoxYcode < min(regTableYCodeMax - 14, 112)) //+14因为字符串与box的定位点不一样
+        if (selectBoxYcode < min(regTableYCodeMax - 14, 112)) //+14因为字符串与box的定位点不一样
         {
 
-            SelectBoxYcode += 14;
+            selectBoxYcode += 14;
         }
         else
         {
@@ -259,12 +260,14 @@ void mainFun::updateSelectionBox(bool direction)
             this->updateCoordinate(direction);
         }
     }
-    Serial.printf("SelectBoxYcode =%d\n", regTableYCodeMax);
+#if 0
+    Serial.printf("selectBoxYcode =%d\n", regTableYCodeMax);
     baseItem *temp = getCurrentSelect();
     if (temp != nullptr)
     {
         Serial.printf("Current Select = %s\n", temp->itemKey.c_str());
     }
+#endif
 }
 
 /**
@@ -303,11 +306,12 @@ baseItem *mainFun::getCurrentSelect()
         {
             if (it->second->getFather() == this->currentKeyLebel)
             {
-                if ((SelectBoxYcode + (28 - SeleceBoxStart + 1) > it->second->y) &&
-                    (SelectBoxYcode + (28 - SeleceBoxStart - 1) < it->second->y)) // 让box的y坐标夹逼，判断选的谁
+                if ((selectBoxYcode + (28 - seleceBoxStart + 1) > it->second->y) &&
+                    (selectBoxYcode + (28 - seleceBoxStart - 1) < it->second->y)) // 让box的y坐标夹逼，判断选的谁
                 {
                     // Serial.printf("{Check point}\n");
                     // Serial.printf("It get a obj = %s\n", it->second->itemKey.c_str());
+                    currentLevel = it->second->level;
                     return it->second;
                 }
 #if 0
@@ -332,30 +336,41 @@ void mainFun::confirmItem()
     int subStrStartPos = 0;
     if (temp != nullptr)
     {
-        if (!temp->getSonFlg() && temp->itemText != "..")
+        if (!temp->getSonFlg() && temp->itemText != "../")
         {
             Serial.printf("Have no son\n");
             return;
         }
 
-        if (temp->itemText == "..")
+        if (temp->itemText == "../")
         {
             subStrStartPos = this->absolutePath.find_last_of("/");
             if (subStrStartPos > 0)
             {
+                // 先去掉当前层级
+                // Serial.printf("0:Current = %s | Absolute=%s\n", this->currentKeyLebel.c_str(), this->absolutePath.c_str());
+                this->absolutePath = this->absolutePath.erase(subStrStartPos,
+                                                              this->absolutePath.length() - subStrStartPos);
+                // Serial.printf("A:Current = %s | Absolute=%s\n", this->currentKeyLebel.c_str(), this->absolutePath.c_str());
+                // 寻找上一层级
+                subStrStartPos = this->absolutePath.find_last_of("/");
                 this->currentKeyLebel = this->absolutePath.substr(subStrStartPos + 1,
                                                                   this->absolutePath.length() - (subStrStartPos + 1));
-                this->absolutePath = this->absolutePath.erase(subStrStartPos + 1,
-                                                              this->absolutePath.length() - (subStrStartPos + 1));
+                // Serial.printf("B:Current = %s | Absolute=%s\n", this->currentKeyLebel.c_str(), this->absolutePath.c_str());
+                resetDispPrameter(false);
+            }
+            else
+            {
+                Serial.printf("ERROR\n");
             }
         }
         else
         {
             this->absolutePath += "/" + temp->itemKey;
             this->currentKeyLebel = temp->itemKey;
+            resetDispPrameter(true);
         }
-        Serial.printf("Current = %s\nAbsolute=%s\n", this->currentKeyLebel.c_str(), this->absolutePath.c_str());
-        resetDispPrameter();
+        // Serial.printf("Current = %s\nAbsolute=%s\n", this->currentKeyLebel.c_str(), this->absolutePath.c_str());
     }
     else
     {
@@ -435,14 +450,23 @@ void mainFun::resetStrOffset()
 
 /**
  * @description: 为新页面重置一些参数
+ * @param {bool} inOrOut true = in;false = out
  * @return {*}
  */
-void mainFun::resetDispPrameter()
+void mainFun::resetDispPrameter(bool inOrOut)
 {
     updateYCodeRange();
     listSlider();
-    SelectBoxYcode = SeleceBoxStart;
     timerReset();
+    if (inOrOut == true)
+    {
+        lastSelectBoxYcode[currentLevel] = selectBoxYcode;
+        selectBoxYcode = seleceBoxStart;
+    }
+    else if (inOrOut == false)
+    {
+        selectBoxYcode = lastSelectBoxYcode[currentLevel - 1];
+    }
 }
 
 /**
@@ -464,8 +488,6 @@ void mainFun::displayMainItem()
         Serial.println("[return]");
         return;
     }
-    // Serial.println("[not return]");
-
     for (it = regTable.begin(); it != regTable.end(); it++)
     {
         if (it->second->hide == false)
@@ -529,7 +551,7 @@ void mainFun::displayMainItem()
 }
 
 /**
- * @description: 显示子菜单
+ * @description: 显示子菜单，若没有子菜单，显示简介
  * @todo: 顺序显示，当前是随机
  * @return {*}
  */
@@ -548,13 +570,14 @@ void mainFun::displaySubItem()
     std::map<string, baseItem *>::iterator it;
     for (it = regTable.begin(); it != regTable.end(); it++)
     {
-        if (it->second->hide == false)
+        if (it->second->hide == false && it->second->itemText != "../")
         {
             if (it->second->type == list)
             {
                 if (it->second->getFather() == currentSelect->itemKey)
                 {
-                    u8g2.setCursor(subMenuX, subMenuY + sum * 14);
+                    // u8g2.setCursor(subMenuX, subMenuY + sum * 14);
+                    u8g2.setCursor(subMenuX, it->second->y - 14);
 
                     // 超长字符串
                     string temp;
