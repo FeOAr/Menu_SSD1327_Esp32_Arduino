@@ -2,14 +2,14 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 23:21:36
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-30 21:55:00
+ * @LastEditTime: 2023-07-01 14:52:34
  * @FilePath: /Menu_SSD1327_S3/UI_design.hpp
  * @Description:
  */
 #include "UIdesign.h"
 #define DEBUG 0
 #define ListInit_TEST 0
-int START_POS_X = 0; // 起始位置
+int START_POS_X = 6; // 起始位置
 int START_POS_Y = 0;
 
 int itemOffsetPosX = 0; // 列表偏移

@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 16:11:57
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-30 21:58:37
+ * @LastEditTime: 2023-07-01 15:40:43
  * @FilePath: /Menu_SSD1327_S3/menu_obj.cpp
  * @Description:
  */
@@ -60,7 +60,7 @@ baseItem::baseItem()
  */
 listItem::listItem(int sortId, string key, string text, bool hide, int level, int type, string commit, string father)
 {
-    this->x = START_POS_X + itemOffsetPosX + 10;
+    this->x = START_POS_X + itemOffsetPosX;
     this->y = START_POS_Y + itemOffsetPOSY + (sortId + 1) * 14;
     this->itemKey = key;
     this->itemText = text;
@@ -411,18 +411,22 @@ void mainFun::confirmItem()
 #if 1
 string mainFun::cutStr(string input, int maxStrDispLength)
 {
-    string temp = input.substr(0, this->strScrollMaskLength + maxStrDispLength + 1);
-    if (this->strOffset % 5 == 0)
+    string temp;
+    // int compensation = 0;
+    if (this->strOffset % 6 == 0)
     {
         if (this->strScrollDir == clockwise)
         {
             this->strScrollMaskLength++;
+            // compensation = 1;
         }
         else if (this->strScrollDir == anticlockwise)
         {
             this->strScrollMaskLength--;
+            // compensation = 0;
         }
     }
+    temp = input.substr(0, this->strScrollMaskLength + maxStrDispLength);
 #if 0
     Serial.printf("Offset = %d , maxOffset = %d ,Substr =%s\n",this->strOffset, this->strScrollMaskLength, temp.c_str());
 #endif
@@ -438,8 +442,8 @@ string mainFun::cutStr(string input, int maxStrDispLength)
  */
 void mainFun::scrollStr(string input, int maxStrDispLength)
 {
-    int strLengthPix = u8g2.getStrWidth(input.c_str()) + 10; // 12是字符像素宽度
-    int maxOffset = strLengthPix - maxStrDispLength * 5;
+    int strLengthPix = u8g2.getStrWidth(input.c_str());
+    int maxOffset = strLengthPix - maxStrDispLength * 6;
 
     if (this->strScrollDir == clockwise && this->strOffset < maxOffset)
     {
@@ -502,7 +506,7 @@ void mainFun::resetDispPrameter(bool inOrOut)
  */
 void mainFun::displayMainItem()
 {
-    int maxStrDispLength = 12;
+    int maxStrDispLength = 11;
     int finalX = 0;
     string test = "test";
     string finalOutString = "NULL";
@@ -531,18 +535,16 @@ void mainFun::displayMainItem()
                         if (it->first == currentSelect->itemKey && this->startScroll)
                         {
                             // 超长选中
-                            // Serial.println("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
-                            finalOutString = cutStr(it->second->itemText, maxStrDispLength);
-                            // Serial.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-                            scrollStr(it->second->itemText, maxStrDispLength);
-                            finalX = 10 - this->strOffset;
+                            finalOutString = cutStr(it->second->itemText, maxStrDispLength); // 截定长子串
+                            scrollStr(it->second->itemText, maxStrDispLength);               // 滚动
+                            finalX = START_POS_X - this->strOffset;
                             u8g2.setCursor(finalX, it->second->y);
                         }
                         else
                         {
                             // 超长非选中
-                            finalOutString = it->second->itemText.substr(0, maxStrDispLength);
-                            finalOutString += "...";
+                            finalOutString = it->second->itemText.substr(0, maxStrDispLength - 2);
+                            finalOutString += "..";
                             u8g2.setCursor(it->second->x, it->second->y);
                         }
                     }
@@ -555,9 +557,9 @@ void mainFun::displayMainItem()
                     u8g2.print(finalOutString.c_str());
 
                     /*----------- 处理有子菜单的项目 -------------*/
-                    if (it->second->type == list && it->second->getSonFlg())
+                    if (it->second->type == list && it->second->getSonFlg() && it->first != currentSelect->itemKey)
                     {
-                        u8g2.drawStr(it->second->x + 64, it->second->y, ">");
+                        u8g2.drawStr(it->second->x + 68, it->second->y, ">");
                     }
 #if DEBUG
                     Serial.println("-----------------------------");
@@ -571,7 +573,6 @@ void mainFun::displayMainItem()
 
             if (it->second->type == label)
             {
-                // Serial.println("here");
                 u8g2.setCursor(it->second->x, it->second->y);
                 u8g2.print(it->second->itemText.c_str());
             }
@@ -588,12 +589,12 @@ void mainFun::displaySubItem()
 {
     int subMenuX = 90;
     int subMenuY = 28;
-    int sum = 0;
     int maxLengthStr = 6;
     int commitSubStrX = 0; // 超长串截取起点
-    int commitSubStrY = 0; // 超长串截取起点
     int commitSbuStrLength = 0;
     int commitSubStrThreshold = 7; // 超长串截取阈值
+    int commitSubStrStartX = 86;   // commit的起始x位置
+    int commitSubStrStartY = 0;    // commit的起始y位置
     baseItem *currentSelect = getCurrentSelect();
     if (currentSelect == nullptr)
     {
@@ -601,30 +602,27 @@ void mainFun::displaySubItem()
     }
     if (currentSelect->getSonFlg() == false)
     {
+        u8g2.setFont(u8g2_font_profont11_mr);
         commitSbuStrLength = currentSelect->getCommit().length();
         if (commitSbuStrLength < commitSubStrThreshold)
         {
-            u8g2.setCursor(88, 28);
+            u8g2.setCursor(commitSubStrStartX, 28);
             u8g2.print(currentSelect->getCommit().c_str());
         }
         else
         {
             while (1)
             {
-                u8g2.setCursor(88, commitSubStrY * 14 + 28);
+                u8g2.setCursor(commitSubStrStartX, commitSubStrStartY * 11 + 28);
                 u8g2.print(currentSelect->getCommit().substr(commitSubStrX, commitSubStrThreshold).c_str());
                 commitSbuStrLength = currentSelect->getCommit().length() - (commitSubStrX + commitSubStrThreshold);
+                commitSubStrX += commitSubStrThreshold;
+                commitSubStrStartY++;
                 if (commitSbuStrLength < commitSubStrThreshold)
                 {
-                    commitSubStrY++;
-                    u8g2.setCursor(88, commitSubStrY * 14 + 28);
-                    u8g2.print(currentSelect->getCommit().c_str());
+                    u8g2.setCursor(commitSubStrStartX, commitSubStrStartY * 11 + 28);
+                    u8g2.print(currentSelect->getCommit().substr(commitSubStrX, commitSbuStrLength).c_str());
                     break;
-                }
-                else
-                {
-                    commitSubStrY++;
-                    commitSubStrX += commitSubStrThreshold;
                 }
             }
         }
@@ -640,7 +638,6 @@ void mainFun::displaySubItem()
                 {
                     if (it->second->getFather() == currentSelect->itemKey)
                     {
-                        // u8g2.setCursor(subMenuX, subMenuY + sum * 14);
                         u8g2.setCursor(subMenuX, it->second->y - 14);
 
                         // 超长字符串
@@ -655,7 +652,6 @@ void mainFun::displaySubItem()
                             temp = it->second->itemText;
                         }
                         u8g2.print(temp.c_str());
-                        sum++;
                     }
                 }
             }

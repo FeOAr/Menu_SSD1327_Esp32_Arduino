@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-23 17:28:32
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-30 19:46:45
+ * @LastEditTime: 2023-07-01 15:01:24
  * @FilePath: /Menu_SSD1327_S3/displayFun.hpp
  * @Description:
  */
@@ -22,42 +22,34 @@ void mainDisplayFun()
     u8g2.drawVLine(80, 14, 120);
     u8g2.drawVLine(83, 14, 120);
     /****************************/
-    u8g2.setFont(u8g2_font_prospero_nbp_tf); // u8g2_font_7x14_tf  u8g2_font_prospero_nbp_tf
-    // u8g2.setCursor(0,90);
-    // u8g2.print("TEST");
-    // u8g2.drawBox(0, 0,128,128);
+    u8g2.setFont(u8g2_font_6x13_mr); //u8g2_font_prospero_nbp_tf这个好看但是不等宽
+    //u8g2_font_t0_13_mr 也不错，但是稍微宽了点
 
     /*-------主列表--------*/
     mainObj->displayMainItem();
 
     /*-------副列表--------*/
     mainObj->displaySubItem();
-    // Serial.printf("\n\n[BBB]\n");
 
     /*-------限位提示--------*/
     if (endAlert)
     {
-        u8g2.drawBox(3, mainObj->selectBoxYcode + 5, 4, 4);
+        u8g2.drawBox(2, mainObj->selectBoxYcode + 3, 3, 8);
         endAlert = false;
     }
-    // Serial.printf("\n\n[123]\n");
     /*-------选择框提示--------*/
     u8g2.setDrawColor(2);
-    u8g2.drawBox(0, mainObj->selectBoxYcode, 72, 14); // 主条
+    u8g2.drawBox(0, mainObj->selectBoxYcode, 78, 14); // 主条
 #if 1
     u8g2.setDrawColor(1);
-    u8g2.drawBox(67, mainObj->selectBoxYcode, 5, 14); // 滚动遮盖
-    u8g2.drawBox(0, mainObj->selectBoxYcode, 2, 14);  // 滚动遮盖
+    u8g2.drawBox(73, mainObj->selectBoxYcode, 6, 14); // 滚动遮盖
 #endif
     /*-------位置滑条提示--------*/
     mainObj->listSlider();
-    // Serial.printf("\n\n[DDD]\n");
     u8g2.setDrawColor(1);
     u8g2.drawBox(80, mainObj->itemSliderOffset * mainObj->itemSliderZoomRatio + 14,
                  3, mainObj->itemSliderZoomRatio * 8);
-    // Serial.printf("itemSliderLength = %d\n", mainObj->itemSliderLength);
 
     /****************************/
     u8g2.sendBuffer();
-    // Serial.printf("\n\n[ggg]\n");
 }
