@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 16:11:57
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-07-01 15:40:43
+ * @LastEditTime: 2023-07-01 17:24:32
  * @FilePath: /Menu_SSD1327_S3/menu_obj.cpp
  * @Description:
  */
@@ -17,7 +17,6 @@ extern int itemOffsetPOSY;
 // extern void timerReset();
 
 enum ItemType itemtype;
-
 enum ScrollDir
 {
     clockwise = 0,
@@ -32,7 +31,9 @@ bool mainFun::strScrollDir = clockwise;
 int mainFun::strScrollMaskLength = 0;
 string mainFun::currentKeyLebel = "root";
 string mainFun::absolutePath = "root";
-int mainFun::lastSelectBoxYcode[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+int mainFun::lastSelectBoxYcode[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};  //存上一级进来前的位置
+int mainFun::subMenuTargetX = 86;
+int test[] = {1, 2, 4, 7, 11, 9, 5, 2, 1, 0}; // 十分简陋的动画曲线，刷新时钟全靠页面的死循环以及各种语句耗时
 
 baseItem::baseItem()
 {
@@ -132,7 +133,7 @@ void mainFun::updateYCodeRange()
 
 void mainFun::updateCoordinate(bool direction)
 {
-    Serial.printf("Min = %d, Max = %d\n", regTableYCodeMin, regTableYCodeMax);
+    // Serial.printf("Min = %d, Max = %d\n", regTableYCodeMin, regTableYCodeMax);
     if ((direction == 0) && (regTableYCodeMin > 20)) // 列表下移
     {
         endAlert = true;
@@ -152,7 +153,7 @@ void mainFun::updateCoordinate(bool direction)
     {
         for (it = regTable.begin(); it != regTable.end(); it++)
         {
-            if (it->second->type == list)
+            if (it->second->type == list && it->second->getFather() == currentKeyLebel)
             {
                 it->second->y += 14;
                 if (it->second->y > 20)
@@ -172,7 +173,7 @@ void mainFun::updateCoordinate(bool direction)
     {
         for (it = regTable.begin(); it != regTable.end(); it++)
         {
-            if (it->second->type == list)
+            if (it->second->type == list && it->second->getFather() == currentKeyLebel)
             {
                 it->second->y -= 14;
                 if (it->second->y < 20)
@@ -232,13 +233,13 @@ void mainFun::updateArrow(bool direction)
  */
 void mainFun::updateSelectionBox(bool direction)
 {
-    // Serial.printf("direction =%d\n", direction);
     if (!direction) // up, 0
     {
         // 尺寸间距以及步进，暂时没有修改的必要，直接写死
         if (selectBoxYcode > seleceBoxStart)
         {
             selectBoxYcode -= 14;
+            // selectBoxTargetYcode = selectBoxYcode - 14;
         }
         else
         {
@@ -253,6 +254,7 @@ void mainFun::updateSelectionBox(bool direction)
         {
 
             selectBoxYcode += 14;
+            // selectBoxTargetYcode = selectBoxYcode + 14;
         }
         else
         {
@@ -396,11 +398,24 @@ void mainFun::confirmItem()
             this->currentKeyLebel = temp->itemKey;
             resetDispPrameter(true);
         }
-        // Serial.printf("Current = %s\nAbsolute=%s\n", this->currentKeyLebel.c_str(), this->absolutePath.c_str());
     }
     else
     {
         Serial.printf("It's NULLPTR [confirmItem]\n");
+    }
+}
+
+void mainFun::animationFun()
+{
+    static int i = 0;
+    if (subMenuStartX > this->subMenuTargetX && i < 10)
+    {
+        subMenuStartX -= test[i];
+        i++;
+    }
+    else
+    {
+        i = 0;
     }
 }
 
@@ -476,6 +491,7 @@ void mainFun::resetStrOffset()
     this->strOffset = 0;
     this->strScrollDir = clockwise;
     this->strScrollMaskLength = 0;
+    subMenuStartX = 127;
 }
 
 /**
@@ -587,40 +603,40 @@ void mainFun::displayMainItem()
  */
 void mainFun::displaySubItem()
 {
-    int subMenuX = 90;
     int subMenuY = 28;
-    int maxLengthStr = 6;
+    int maxLengthStr = 7;
     int commitSubStrX = 0; // 超长串截取起点
     int commitSbuStrLength = 0;
     int commitSubStrThreshold = 7; // 超长串截取阈值
-    int commitSubStrStartX = 86;   // commit的起始x位置
-    int commitSubStrStartY = 0;    // commit的起始y位置
+    // int commitSubStrStartX = 86;   // commit的起始x位置
+    int commitSubStrStartY = 0; // commit的起始y位置
     baseItem *currentSelect = getCurrentSelect();
     if (currentSelect == nullptr)
     {
         return;
     }
+    animationFun();
     if (currentSelect->getSonFlg() == false)
     {
         u8g2.setFont(u8g2_font_profont11_mr);
         commitSbuStrLength = currentSelect->getCommit().length();
         if (commitSbuStrLength < commitSubStrThreshold)
         {
-            u8g2.setCursor(commitSubStrStartX, 28);
+            u8g2.setCursor(subMenuStartX, subMenuY);
             u8g2.print(currentSelect->getCommit().c_str());
         }
         else
         {
             while (1)
             {
-                u8g2.setCursor(commitSubStrStartX, commitSubStrStartY * 11 + 28);
+                u8g2.setCursor(subMenuStartX, commitSubStrStartY * 11 + subMenuY);
                 u8g2.print(currentSelect->getCommit().substr(commitSubStrX, commitSubStrThreshold).c_str());
                 commitSbuStrLength = currentSelect->getCommit().length() - (commitSubStrX + commitSubStrThreshold);
                 commitSubStrX += commitSubStrThreshold;
                 commitSubStrStartY++;
                 if (commitSbuStrLength < commitSubStrThreshold)
                 {
-                    u8g2.setCursor(commitSubStrStartX, commitSubStrStartY * 11 + 28);
+                    u8g2.setCursor(subMenuStartX, commitSubStrStartY * 11 + subMenuY);
                     u8g2.print(currentSelect->getCommit().substr(commitSubStrX, commitSbuStrLength).c_str());
                     break;
                 }
@@ -629,6 +645,7 @@ void mainFun::displaySubItem()
     }
     else
     {
+        string temp;
         std::map<string, baseItem *>::iterator it;
         for (it = regTable.begin(); it != regTable.end(); it++)
         {
@@ -638,19 +655,17 @@ void mainFun::displaySubItem()
                 {
                     if (it->second->getFather() == currentSelect->itemKey)
                     {
-                        u8g2.setCursor(subMenuX, it->second->y - 14);
-
                         // 超长字符串
-                        string temp;
                         if (it->second->itemText.length() > maxLengthStr)
                         {
-                            temp = it->second->itemText.substr(0, maxLengthStr);
-                            temp += "...";
+                            temp = it->second->itemText.substr(0, maxLengthStr - 2);
+                            temp += "..";
                         }
                         else
                         {
                             temp = it->second->itemText;
                         }
+                        u8g2.setCursor(subMenuStartX, it->second->y - 14);
                         u8g2.print(temp.c_str());
                     }
                 }
@@ -659,6 +674,10 @@ void mainFun::displaySubItem()
     }
 }
 
+/**
+ * @description: 查看整个mep容器内容
+ * @return {*}
+ */
 void mainFun::showAllRegTable()
 {
     std::map<string, baseItem *>::iterator it;

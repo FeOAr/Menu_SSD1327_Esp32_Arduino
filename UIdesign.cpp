@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 23:21:36
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-07-01 14:52:34
+ * @LastEditTime: 2023-07-01 16:35:28
  * @FilePath: /Menu_SSD1327_S3/UI_design.hpp
  * @Description:
  */
@@ -33,7 +33,7 @@ void listInit()
 
     /*-------菜单 L0-------*/
     /*-----------------------------(sortId, key,     val,       hide,level,type,commit, father)*/
-    baseItem *item_L0_1 = new listItem(1, "item_L0_1", "List item 1", false, 0, list, "Test Commit, It's List item 1", "root"); // sortId是列表位置排序，必须连续，不同层级可以重复
+    baseItem *item_L0_1 = new listItem(1, "item_L0_1", "List item 1", false, 0, list, "This is an introduction to a list label.", "root"); // sortId是列表位置排序，必须连续，不同层级可以重复
     mainObj->registerItem(item_L0_1);
 
     baseItem *item_L0_2 = new listItem(2, "item_L0_2", "List item 2", false, 0, list, "NULL", "root");

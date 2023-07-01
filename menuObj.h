@@ -2,7 +2,7 @@
  * @Author: feoar feoar@outlook.com
  * @Date: 2023-06-22 13:44:42
  * @LastEditors: feoar feoar@outlook.com
- * @LastEditTime: 2023-06-30 21:11:46
+ * @LastEditTime: 2023-07-01 16:48:09
  * @FilePath: /Menu_SSD1327_S3/menu_obj.h
  * @Description:
  */
@@ -83,9 +83,10 @@ public: // 应该私有
     static bool strScrollDir;       // 字符串滚动方向
     static int strScrollMaskLength; // 字符串滚动遮罩长度
     bool startScroll = false;
-    static string currentKeyLebel; // 显示所有条目依赖的索引
-    static string absolutePath;    // 所有操作依赖的完整路径
-
+    static string currentKeyLebel;   // 显示所有条目依赖的索引
+    static string absolutePath;      // 所有操作依赖的完整路径
+    static int subMenuTargetX; // box移动时的最终坐标，供动画用
+    int subMenuStartX = 129;  //为动画使用
 public:
     void registerItem(baseItem *);
     void unregisterItem(string);
@@ -104,6 +105,8 @@ public:
     void resetDispPrameter(bool);
     void updateAllLabel();
     void confirmItem();
+
+    void animationFun();
 
     void setScrollFlg(bool status) { startScroll = status; }
     bool getScrollFlg() { return startScroll; }
